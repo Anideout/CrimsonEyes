@@ -1958,6 +1958,24 @@ alter table pedidos_laboratorio
             on delete set null;
 
 
+
+
+
+--Tipos de datos compuestos: VARRAY 
+
+-- crear tipos VARRAY para manejar multiples valores 
+CREATE OR REPLACE TYPE tipo_telefono AS VARRAY(3) OF VARCHAR2(20);
+/
+CREATE OR REPLACE TYPE tipo_email AS VARRAY(2) OF VARCHAR2(20);
+/
+--Actualizar tabla clientes para usar VARRAY
+ALTER TABLE clientes ADD (
+   telefonos tipo_telefono,
+   emails_adicionales tipo_email
+);
+
+
+
 --======================================================
 -- 1) PROCEDIMIENTO ALMACENADOS
 --======================================================
@@ -1990,7 +2008,7 @@ CREATE OR REPLACE PROCEDURE asignar_promocion_cliente (
    p_id_promocion IN INTEGER
 ) IS
    v_count_cliente INTEGER; 
-   v_count_promocion INTEGER;
+   v_count_promocion INTEGER;ihgbnweuif
 BEGIN 
    -- verificar que el cliente existe
    SELECT COUNT(*)
@@ -2146,6 +2164,8 @@ end;
 --RECORD-ALCTUALIZACIÓN DE LA SUCURSAL DE UN EMPLEADO
 declare
    v_empleado empleados%rowtype;
+   v_sucursal_nueva VARCHAR2(255) := 'Sucursal Centro';
+
 begin
    select *
      into v_empleado
@@ -2154,6 +2174,7 @@ begin
 
    v_empleado.sucursal := 'Sucursal Parral';
 
+
    update empleados
       set sucursal = v_empleado.sucursal
     where rut = v_empleado.rut;
@@ -2161,37 +2182,60 @@ begin
    commit;
 end;
 /
---BLOQUE
-declare
-   v_tiene_ventas number;
-begin
-   -- Bloque principal con el FOR LOOP para iterar sobre los clientes
-   for r_cliente in (select rut, nombre, apellido from clientes) loop
-   
-      -- Bloque anidado para verificar si el cliente tiene ventas
-      begin
-         -- Se reinicia la variable en cada iteración
-         v_tiene_ventas := 0;
-         
-         select count(id)
-           into v_tiene_ventas
-           from ventas
-          where rut_cliente = r_cliente.rut;
-          
-         if v_tiene_ventas > 0 then
-            dbms_output.put_line('El cliente ' || r_cliente.nombre || ' ' || r_cliente.apellido || ' tiene ' || v_tiene_ventas || ' ventas registradas.');
-         else
-            dbms_output.put_line('El cliente ' || r_cliente.nombre || ' ' || r_cliente.apellido || ' no tiene ventas.');
-         end if;
-         
-      exception
-         when others then
-            dbms_output.put_line('Error al procesar el cliente ' || r_cliente.rut || ': ' || sqlerrm);
-      end;
-   end loop;
-end;
-/
 
+--BLOQUE anonimo con cursor implicito
+DECLARE
+   v_total_clientes NUMBER := 0;
+   v_sin_examen NUMBER := 0;
+BEGIN
+   SELECT COUNT(*) INTO v_total_clientes FROM clientes;
+   
+   DBMS_OUTPUT.PUT_LINE('=== Clientes sin Examen Visual ===');
+   DBMS_OUTPUT.PUT_LINE('Total de clientes: ' || v_total_clientes);
+   DBMS_OUTPUT.PUT_LINE('');
+
+   -- Cursor implícito para revisar clientes sin historial médico
+   FOR r_cliente IN (
+      SELECT c.rut, c.nombre, c.apellido, c.correo 
+      FROM clientes c
+      WHERE NOT EXISTS (
+         SELECT 1 FROM historial_medico_visual h 
+         WHERE h.rut_cliente = c.rut
+      )
+      ORDER BY c.apellido, c.nombre
+   ) LOOP
+   
+      BEGIN
+         v_sin_examen := v_sin_examen + 1;
+         
+         DBMS_OUTPUT.PUT_LINE(v_sin_examen || '. ' || r_cliente.nombre || ' ' || 
+                            r_cliente.apellido || ' - RUT: ' || r_cliente.rut);
+         DBMS_OUTPUT.PUT_LINE('   Email: ' || NVL(r_cliente.correo, 'Sin email'));
+         DBMS_OUTPUT.PUT_LINE('');
+         
+      EXCEPTION
+         WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error procesando cliente: ' || r_cliente.rut);
+      END;
+   END LOOP;
+
+   DBMS_OUTPUT.PUT_LINE('=== RESUMEN ===');
+   DBMS_OUTPUT.PUT_LINE('Clientes sin examen: ' || v_sin_examen);
+   DBMS_OUTPUT.PUT_LINE('Clientes con examen: ' || (v_total_clientes - v_sin_examen));
+   
+   IF v_sin_examen > 0 THEN
+      DBMS_OUTPUT.PUT_LINE('Acción: Contactar para agendar primera consulta');
+   ELSE
+      DBMS_OUTPUT.PUT_LINE('Todos los clientes tienen examen registrado');
+   END IF;
+
+END;
+
+
+
+
+/
+-- Bloque anonimo con cursor explicito 
 DECLARE 
    v_tiene_ventas NUMBER;
    v_total_clientes NUMBER := 0;
@@ -2294,255 +2338,5 @@ EXCEPTION
    WHEN OTHERS THEN 
       ROLLBACK;
       DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
-END;
-/
-
---------------------------------------------------------
-- 5. PACKAGE SUGERIDO
--- ====================
-
--- Package Header
-CREATE OR REPLACE PACKAGE pkg_optica_gestion IS
-   -- Tipos personalizados
-   TYPE t_producto_info IS RECORD (
-      id               productos.id%TYPE,
-      nombre           productos.nombre%TYPE,
-      precio           productos.precio%TYPE,
-      stock            productos.stock_disponible%TYPE,
-      marca            marca.nombre_marca%TYPE,
-      categoria        categorias_productos.nombre%TYPE
-   );
-   
-   TYPE t_productos_array IS TABLE OF t_producto_info;
-   
-   -- Constantes
-   C_STOCK_MINIMO CONSTANT INTEGER := 5;
-   C_DESCUENTO_PROMOCION CONSTANT NUMBER := 0.10;
-   
-   -- Procedimientos públicos
-   PROCEDURE buscar_productos_categoria(
-      p_categoria IN VARCHAR2,
-      p_productos OUT SYS_REFCURSOR
-   );
-   
-   PROCEDURE procesar_venta(
-      p_rut_cliente IN VARCHAR2,
-      p_rut_empleado IN VARCHAR2,
-      p_id_sucursal IN INTEGER,
-      p_productos IN VARCHAR2, -- IDs separados por comas
-      p_id_venta OUT INTEGER
-   );
-   
-   PROCEDURE generar_reporte_stock_bajo(
-      p_reporte OUT SYS_REFCURSOR
-   );
-   
-   FUNCTION calcular_total_venta(
-      p_id_venta IN INTEGER
-   ) RETURN NUMBER;
-   
-   FUNCTION cliente_tiene_promocion(
-      p_rut_cliente IN VARCHAR2
-   ) RETURN BOOLEAN;
-   
-   -- Excepciones personalizadas
-   ex_stock_insuficiente EXCEPTION;
-   ex_cliente_no_existe EXCEPTION;
-   ex_empleado_no_existe EXCEPTION;
-   
-   PRAGMA EXCEPTION_INIT(ex_stock_insuficiente, -20100);
-   PRAGMA EXCEPTION_INIT(ex_cliente_no_existe, -20101);
-   PRAGMA EXCEPTION_INIT(ex_empleado_no_existe, -20102);
-   
-END pkg_optica_gestion;
-/
-
--- Package Body
-CREATE OR REPLACE PACKAGE BODY pkg_optica_gestion IS
-
-   -- Procedimiento privado para validar existencia de cliente
-   PROCEDURE validar_cliente(p_rut_cliente IN VARCHAR2) IS
-      v_count INTEGER;
-   BEGIN
-      SELECT COUNT(*)
-        INTO v_count
-        FROM clientes
-       WHERE rut = p_rut_cliente;
-       
-      IF v_count = 0 THEN
-         RAISE_APPLICATION_ERROR(-20101, 'Cliente no existe: ' || p_rut_cliente);
-      END IF;
-   END validar_cliente;
-
-   -- Implementación de buscar_productos_categoria
-   PROCEDURE buscar_productos_categoria(
-      p_categoria IN VARCHAR2,
-      p_productos OUT SYS_REFCURSOR
-   ) IS
-   BEGIN
-      OPEN p_productos FOR
-         SELECT p.id, p.nombre, p.precio, p.stock_disponible,
-                m.nombre_marca, cp.nombre as categoria
-           FROM productos p
-           JOIN marca m ON p.id_marca = m.id_marca
-           JOIN categorias_productos cp ON p.id_categoria = cp.id
-          WHERE UPPER(cp.nombre) = UPPER(p_categoria)
-            AND p.stock_disponible > 0
-       ORDER BY p.nombre;
-   END buscar_productos_categoria;
-
-   -- Implementación de procesar_venta
-   PROCEDURE procesar_venta(
-      p_rut_cliente IN VARCHAR2,
-      p_rut_empleado IN VARCHAR2,
-      p_id_sucursal IN INTEGER,
-      p_productos IN VARCHAR2,
-      p_id_venta OUT INTEGER
-   ) IS
-      v_total_venta NUMBER := 0;
-      v_precio_producto NUMBER;
-      v_stock_actual INTEGER;
-      v_id_producto INTEGER;
-      v_pos INTEGER := 1;
-      v_next_pos INTEGER;
-      v_productos_lista VARCHAR2(4000) := p_productos || ',';
-   BEGIN
-      -- Validar cliente
-      validar_cliente(p_rut_cliente);
-      
-      -- Crear la venta
-      INSERT INTO ventas (fecha, total_venta, rut_cliente, rut_empleado, id_sucursal)
-      VALUES (SYSDATE, 0, p_rut_cliente, p_rut_empleado, p_id_sucursal)
-      RETURNING id INTO p_id_venta;
-      
-      -- Procesar cada producto
-      WHILE v_pos < LENGTH(v_productos_lista) LOOP
-         v_next_pos := INSTR(v_productos_lista, ',', v_pos);
-         v_id_producto := TO_NUMBER(SUBSTR(v_productos_lista, v_pos, v_next_pos - v_pos));
-         
-         -- Verificar stock y obtener precio
-         SELECT precio, stock_disponible
-           INTO v_precio_producto, v_stock_actual
-           FROM productos
-          WHERE id = v_id_producto;
-          
-         IF v_stock_actual <= 0 THEN
-            RAISE_APPLICATION_ERROR(-20100, 'Stock insuficiente para producto ID: ' || v_id_producto);
-         END IF;
-         
-         -- Insertar detalle de venta
-         INSERT INTO detalles_ventas (id_venta, id_producto)
-         VALUES (p_id_venta, v_id_producto);
-         
-         v_total_venta := v_total_venta + v_precio_producto;
-         v_pos := v_next_pos + 1;
-      END LOOP;
-      
-      -- Actualizar total de la venta
-      UPDATE ventas
-         SET total_venta = v_total_venta
-       WHERE id = p_id_venta;
-       
-      COMMIT;
-      
-   EXCEPTION
-      WHEN OTHERS THEN
-         ROLLBACK;
-         RAISE;
-   END procesar_venta;
-
-   -- Implementación de generar_reporte_stock_bajo
-   PROCEDURE generar_reporte_stock_bajo(
-      p_reporte OUT SYS_REFCURSOR
-   ) IS
-   BEGIN
-      OPEN p_reporte FOR
-         SELECT p.id, p.nombre, p.stock_disponible,
-                m.nombre_marca, cp.nombre as categoria,
-                prov.nombre as proveedor
-           FROM productos p
-           JOIN marca m ON p.id_marca = m.id_marca
-           JOIN categorias_productos cp ON p.id_categoria = cp.id
-           JOIN proveedor prov ON p.id_proveedor = prov.id_proveedor
-          WHERE p.stock_disponible <= C_STOCK_MINIMO
-       ORDER BY p.stock_disponible ASC, p.nombre;
-   END generar_reporte_stock_bajo;
-
-   -- Implementación de calcular_total_venta
-   FUNCTION calcular_total_venta(
-      p_id_venta IN INTEGER
-   ) RETURN NUMBER IS
-      v_total NUMBER := 0;
-   BEGIN
-      SELECT NVL(SUM(p.precio), 0)
-        INTO v_total
-        FROM detalles_ventas dv
-        JOIN productos p ON dv.id_producto = p.id
-       WHERE dv.id_venta = p_id_venta;
-       
-      RETURN v_total;
-   END calcular_total_venta;
-
-   -- Implementación de cliente_tiene_promocion
-   FUNCTION cliente_tiene_promocion(
-      p_rut_cliente IN VARCHAR2
-   ) RETURN BOOLEAN IS
-      v_promocion_id INTEGER;
-   BEGIN
-      SELECT id_promocion
-        INTO v_promocion_id
-        FROM clientes
-       WHERE rut = p_rut_cliente;
-       
-      RETURN v_promocion_id IS NOT NULL;
-      
-   EXCEPTION
-      WHEN NO_DATA_FOUND THEN
-         RETURN FALSE;
-   END cliente_tiene_promocion;
-
-END pkg_optica_gestion;
-/
-
--- 6. EJEMPLOS DE USO
--- ===================
-
--- Ejemplo 1: Usar procedimiento de búsqueda
-DECLARE
-   v_cursor SYS_REFCURSOR;
-   v_id INTEGER;
-   v_nombre VARCHAR2(255);
-   v_stock INTEGER;
-   v_precio NUMBER;
-   v_marca VARCHAR2(255);
-BEGIN
-   pkg_optica_gestion.buscar_productos_categoria('Gafas de Sol', v_cursor);
-   
-   DBMS_OUTPUT.PUT_LINE('=== PRODUCTOS DE GAFAS DE SOL ===');
-   LOOP
-      FETCH v_cursor INTO v_id, v_nombre, v_stock, v_precio, v_marca;
-      EXIT WHEN v_cursor%NOTFOUND;
-      
-      DBMS_OUTPUT.PUT_LINE('ID: ' || v_id || ' | ' || v_nombre || 
-                          ' | Stock: ' || v_stock || ' | Precio: $' || v_precio ||
-                          ' | Marca: ' || v_marca);
-   END LOOP;
-   CLOSE v_cursor;
-END;
-/
-
--- Ejemplo 2: Procesar una venta
-DECLARE
-   v_id_venta INTEGER;
-BEGIN
-   pkg_optica_gestion.procesar_venta(
-      p_rut_cliente => '12345678-9',
-      p_rut_empleado => '11222333-4',
-      p_id_sucursal => 1,
-      p_productos => '1,2,3', -- IDs de productos separados por comas
-      p_id_venta => v_id_venta
-   );
-   
-   DBMS_OUTPUT.PUT_LINE('Venta procesada con ID: ' || v_id_venta);
 END;
 /

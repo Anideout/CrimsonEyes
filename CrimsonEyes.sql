@@ -1963,19 +1963,32 @@ alter table pedidos_laboratorio
 
 --Tipos de datos compuestos: VARRAY 
 
--- crear tipos VARRAY para manejar multiples valores 
-CREATE OR REPLACE TYPE tipo_telefono AS VARRAY(3) OF VARCHAR2(20);
+DECLARE 
+   TYPE MarcasArray IS VARRAY(5) OF VARCHAR2(100);
+   v_marcas MarcasArray := MarcasArray();
+BEGIN    
+   v_marcas.EXTEND(3);      
+   v_marcas(1) := 'Ray-Ban'; 
+   v_marcas(2) := 'Oakley';
+   v_marcas(3) := 'Gucci';
+
+
+   FOR i IN 1 .. v_marcas.COUNT LOOP
+      DBMS_OUTPUT.PUT_LINE('('|| i||') ' || 'MARCA '  || ': ' || v_marcas(i));
+   END LOOP;
+END;
 /
-CREATE OR REPLACE TYPE tipo_email AS VARRAY(2) OF VARCHAR2(20);
+-- crear tipos VARRAY para manejar multiples valores 
+CREATE OR REPLACE TYPE tipo_producto AS VARRAY(3) OF VARCHAR2(20);
+/
+CREATE OR REPLACE TYPE telefono_adicional AS VARRAY(2) OF VARCHAR2(20);
 /
 --Actualizar tabla clientes para usar VARRAY
 ALTER TABLE clientes ADD (
-   telefonos tipo_telefono,
-   emails_adicionales tipo_email
+   telefono telefono_adicional,
+   tipo tipo_producto
 );
-
-
-
+select * from clientes
 --======================================================
 -- 1) PROCEDIMIENTO ALMACENADOS
 --======================================================
@@ -1984,31 +1997,88 @@ ALTER TABLE clientes ADD (
 CREATE OR REPLACE PROCEDURE buscar_productos_por_categoria (
    p_categoria IN VARCHAR2,
    p_productos OUT SYS_REFCURSOR
-)IS 
+) IS 
+   v_count NUMBER := 0;
 BEGIN 
+   -- Verificar si existen productos en la categoría
+   SELECT COUNT(*)
+   INTO v_count
+   FROM productos p
+   JOIN categorias_productos cp ON p.id_categoria = cp.id 
+   JOIN marca m ON p.id_marca = m.id_marca
+   WHERE UPPER(cp.nombre) = UPPER(p_categoria)
+   AND p.stock_disponible > 0;
+   
+   -- Abrir cursor con productos de la óptica
    OPEN p_productos FOR 
-      SELECT p.id, p.nombre, p.stock_disponible, p.precio, m.nombre_marca
+      SELECT p.id, 
+             p.nombre, 
+             p.stock_disponible, 
+             p.precio, 
+             m.nombre_marca,
+             cp.nombre as categoria
       FROM productos p
       JOIN categorias_productos cp ON p.id_categoria = cp.id 
       JOIN marca m ON p.id_marca = m.id_marca
       WHERE UPPER(cp.nombre) = UPPER(p_categoria)
       AND p.stock_disponible > 0
-   ORDER BY p.nombre;
-EXCEPTION 
-   WHEN NO_DATA_FOUND THEN
+      ORDER BY p.precio DESC, p.nombre;
    
-       DBMS_OUTPUT.PUT_LINE('No se encontraron productos para esa categoria...' || p_categoria);
+   -- Mensaje informativo
+   IF v_count = 0 THEN
+      DBMS_OUTPUT.PUT_LINE('No se encontraron productos disponibles para: ' || p_categoria);
+   ELSE
+      DBMS_OUTPUT.PUT_LINE('Se encontraron ' || v_count || ' productos disponibles en: ' || p_categoria);
+   END IF;
+
+EXCEPTION 
    WHEN OTHERS THEN 
-       DBMS_OUTPUT.PUT_LINE('Error al buscar productos' || SQLERRM);
+       DBMS_OUTPUT.PUT_LINE('Error al buscar productos: ' || SQLERRM);
+       OPEN p_productos FOR SELECT NULL id, NULL nombre, NULL stock_disponible, NULL precio, NULL nombre_marca, NULL categoria FROM dual WHERE 1=0;
 END;
 /
+
+-- uso con categorías 
+DECLARE
+   v_cursor SYS_REFCURSOR;
+   v_id NUMBER;
+   v_nombre VARCHAR2(255);
+   v_stock NUMBER;
+   v_precio NUMBER;
+   v_marca VARCHAR2(255);
+   v_categoria VARCHAR2(255);
+BEGIN
+   DBMS_OUTPUT.PUT_LINE('=== BÚSQUEDA DE GAFAS DE SOL ===');
+   
+   -- Buscar gafas de sol
+   buscar_productos_por_categoria('Gafas de Sol', v_cursor);
+   
+   -- Mostrar resultados
+   LOOP
+      FETCH v_cursor INTO v_id, v_nombre, v_stock, v_precio, v_marca, v_categoria;
+      EXIT WHEN v_cursor%NOTFOUND;
+      
+      DBMS_OUTPUT.PUT_LINE('▶ ' || v_marca || ' ' || v_nombre);
+      DBMS_OUTPUT.PUT_LINE('  Precio: $' || v_precio || ' | Stock: ' || v_stock || ' unidades');
+      DBMS_OUTPUT.PUT_LINE('');
+   END LOOP;
+   
+   CLOSE v_cursor;
+   
+   DBMS_OUTPUT.PUT_LINE('=== FIN DE BÚSQUEDA ===');
+END;
+/
+
+
+
+
 -- Procedimiento: asignar promocion a cliente 
 CREATE OR REPLACE PROCEDURE asignar_promocion_cliente ( 
    p_rut_cliente IN VARCHAR2,
    p_id_promocion IN INTEGER
 ) IS
    v_count_cliente INTEGER; 
-   v_count_promocion INTEGER;ihgbnweuif
+   v_count_promocion INTEGER;
 BEGIN 
    -- verificar que el cliente existe
    SELECT COUNT(*)
@@ -2107,7 +2177,7 @@ END;
 
 
 
---TRIGERS: DEVOLVER UN PRODUCTO DESPUÉS DE UNA DEVOLUCIÓN
+--TRIGGERS: DEVOLVER UN PRODUCTO DESPUÉS DE UNA DEVOLUCIÓN
 create or replace trigger tr_devolver_stock_producto
 after insert on devoluciones
 for each row
@@ -2153,6 +2223,8 @@ EXCEPTION
 
 END;
 /
+
+
 --RECORDS-MANEJO DE INFORMACIÓN DE UN PROVEEDOR
 begin
    for r_devolucion in (select * from devoluciones where fecha_devolucion = sysdate) loop
@@ -2182,6 +2254,7 @@ begin
    commit;
 end;
 /
+
 
 --BLOQUE anonimo con cursor implicito
 DECLARE
@@ -2230,11 +2303,11 @@ BEGIN
    END IF;
 
 END;
-
-
-
-
 /
+
+
+
+
 -- Bloque anonimo con cursor explicito 
 DECLARE 
    v_tiene_ventas NUMBER;
@@ -2283,60 +2356,49 @@ EXCEPTION
 END;
 /
 
--- 4. Records
 
+-- 4. Records
 -- record: Actualizacion de sucursal de empleado 
 DECLARE 
-   v_empleado empleados%ROWTYPE;
-   v_existe_empleado NUMBER;
-   v_existe_sucursal NUMBER;
-   v_nueva_sucursal VARCHAR2(255) := 'Sucursal Parral';
+   -- Definir un record simple
+   TYPE t_empleado IS RECORD (
+      rut VARCHAR2(20),
+      nombre VARCHAR2(100),
+      sucursal VARCHAR2(255)
+   );
+   
+   v_empleado t_empleado;
+   v_nueva_sucursal VARCHAR2(255) := 'Sucursal Valparaíso';
 BEGIN 
-   -- Verificar si el empleado existe
-   SELECT COUNT(*)
-   INTO v_existe_empleado
-   FROM empleados
-   WHERE rut = '77888999-0';
-
-   IF v_existe_empleado = 0 THEN
-      DBMS_OUTPUT.PUT_LINE('eL empleado con rut 77888999-0 no existe...');
-   END IF;
-
-   SELECT COUNT(*)
-   INTO v_existe_sucursal
-   FROM sucursal
-   WHERE nombre_sucursal = v_nueva_sucursal;
-
-   IF v_existe_sucursal = 0 THEN
-
-      --se crea la sucursal si es que no existe
-      INSERT INTO sucursal (nombre_sucursal) VALUES (v_nueva_sucursal);
-      DBMS_OUTPUT.PUT_LINE('Nueva sucursal creada: ' || v_nueva_sucursal);
-   END IF;
-
-   SELECT * 
-   INTO v_empleado
+   -- Obtener datos del empleado
+   SELECT rut, nombre, sucursal 
+   INTO v_empleado.rut, v_empleado.nombre, v_empleado.sucursal
    FROM empleados
    WHERE rut = '77888999-0';
 
    DBMS_OUTPUT.PUT_LINE('Empleado: ' || v_empleado.nombre);
-   DBMS_OUTPUT.PUT_LINE('Sucursal anterior: ' || v_empleado.sucursal);   
-   
-   -- Actualizar sucursal
-   v_empleado.sucursal := v_nueva_sucursal;
+   DBMS_OUTPUT.PUT_LINE('Sucursal actual: ' || v_empleado.sucursal);   
 
+   -- Verificar si ya está en la sucursal destino
+   IF v_empleado.sucursal = v_nueva_sucursal THEN
+      DBMS_OUTPUT.PUT_LINE('El empleado ya está en ' || v_nueva_sucursal);
+      RETURN;
+   END IF;
+
+   -- Actualizar sucursal
    UPDATE empleados
-      SET sucursal = v_empleado.sucursal
+      SET sucursal = v_nueva_sucursal
    WHERE rut = v_empleado.rut;
 
    COMMIT;
-   DBMS_OUTPUT.PUT_LINE('Sucursal actualizada a ' || v_empleado.sucursal);
+   DBMS_OUTPUT.PUT_LINE('Transferido de "' || v_empleado.sucursal || '" a "' || v_nueva_sucursal || '"');
 
 EXCEPTION
    WHEN NO_DATA_FOUND THEN 
-      DBMS_OUTPUT.PUT_LINE('ERROR: no se encontro el empleado...');
+      DBMS_OUTPUT.PUT_LINE('ERROR: Empleado no encontrado');
    WHEN OTHERS THEN 
       ROLLBACK;
       DBMS_OUTPUT.PUT_LINE('ERROR: ' || SQLERRM);
 END;
 /
+select * from clientes 

@@ -9,18 +9,32 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.room.Delete
 import com.example.crimsoneyes.R
 import com.example.crimsoneyes.controller.RecetaViewModel
 import com.example.crimsoneyes.model.Receta
@@ -31,6 +45,7 @@ fun HomeScreen(
     viewModel: RecetaViewModel,
     isDarkMode: Boolean,
     onToggleTheme: () -> Unit,
+    onNavigateToProductos: () -> Unit,
     onLogout: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -149,6 +164,11 @@ fun HomeScreen(
                     StatsCard(recetasCount = state.list.size)
                 }
 
+                // A PRODUCTOS
+                item {
+                    ProductosNavigationCard(onNavigateToProductos = onNavigateToProductos)
+                }
+
                 // LOADING
                 if (state.isListLoading && state.list.isEmpty()) {
                     item {
@@ -196,6 +216,76 @@ fun HomeScreen(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductosNavigationCard(onNavigateToProductos: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(56.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ShoppingCart,
+                        contentDescription = null,
+                        modifier = Modifier.padding(14.dp),
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+
+                Column {
+                    Text(
+                        "Catálogo de Lentes",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Text(
+                        "Explora nuestros productos",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            FilledTonalButton(
+                onClick = onNavigateToProductos,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary
+                )
+            ) {
+                Text("Ver", fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .graphicsLayer(rotationZ = 180f)
+                )
             }
         }
     }

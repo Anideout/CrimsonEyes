@@ -205,7 +205,7 @@ fun PantallaRegistro(
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             painter = painterResource(
-                                id = if (passwordVisible) R.drawable.sunglass else R.drawable.oscurin
+                                id = if (passwordVisible) R.drawable.hidden else R.drawable.eye
                             ),
                             contentDescription = if (passwordVisible) "Ocultar" else "Mostrar",
                             modifier = Modifier.size(20.dp)
@@ -240,7 +240,7 @@ fun PantallaRegistro(
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                         Icon(
                             painter = painterResource(
-                                id = if (confirmPasswordVisible) R.drawable.sunglass else R.drawable.oscurin
+                                id = if (confirmPasswordVisible) R.drawable.hidden else R.drawable.eye
                             ),
                             contentDescription = if (confirmPasswordVisible) "Ocultar" else "Mostrar",
                             modifier = Modifier.size(20.dp)

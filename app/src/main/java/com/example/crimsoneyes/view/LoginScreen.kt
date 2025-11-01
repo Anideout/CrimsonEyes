@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.crimsoneyes.R
 import com.example.crimsoneyes.controller.LoginState
@@ -27,7 +28,7 @@ import com.example.crimsoneyes.controller.LoginViewModel
 @Composable
 fun PantallaLogin(
     // Variables asignadas para confirmar que logeas correctamente
-    onLoginSucces: () -> Unit,
+    onLoginSuccess: () -> Unit,
     // Darkmode
     isDarkMode: Boolean,
     onNavigateToRegister: () -> Unit,
@@ -45,13 +46,15 @@ fun PantallaLogin(
 
     // Variable para controlar el mensaje de error local (campos vacíos)
     var localErrorMessage by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false)}
 
     // Manejar el éxito del login
     LaunchedEffect(loginState) {
         when (loginState) {
             is LoginState.Success -> {
                 // Usuario autenticado correctamente, navegar
-                onLoginSucces()
+                onLoginSuccess()
                 // Resetear el estado después de navegar
                 viewModel.resetState()
             }
@@ -134,6 +137,7 @@ fun PantallaLogin(
                 text = "CrimsonEyes",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
+                fontSize = 50.sp,
                 color = MaterialTheme.colorScheme.primary
             )
 
@@ -142,6 +146,7 @@ fun PantallaLogin(
             Text(
                 text = "Ve el mundo con otros ojos, ve con Crimson Eyes",
                 style = MaterialTheme.typography.bodyLarge,
+                fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
@@ -186,12 +191,23 @@ fun PantallaLogin(
                 singleLine = true,
                 enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if(passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                )
+                ),
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (passwordVisible) R.drawable.hidden else R.drawable.eye
+                        ),
+                        contentDescription = if (passwordVisible) "Ocultar" else "Mostrar",
+                        modifier = Modifier.size(20.dp)
+                    )
+            }
+        },
             )
 
             // Mostrar mensaje de error con animación

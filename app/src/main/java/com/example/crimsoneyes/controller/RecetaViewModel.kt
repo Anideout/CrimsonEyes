@@ -3,6 +3,7 @@ package com.example.crimsoneyes.controller
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.crimsoneyes.api.ApiService
+import com.example.crimsoneyes.model.Producto
 import com.example.crimsoneyes.model.Receta
 import com.example.crimsoneyes.network.RetrofitProvider
 import com.example.crimsoneyes.repository.RecetaRepository
@@ -27,7 +28,12 @@ data class RecetaUiState(
     //listado
     val list: List<Receta> = emptyList(),
     val isListLoading: Boolean = false,
-    val listError: String? = null
+    val listError: String? = null,
+
+    val productos: List<Producto> = emptyList(),
+    val isProductosLoading: Boolean = false,
+    val productosError: String? = null,
+    val selectedTab: Int = 0
 )
 
 class RecetaViewModel(private val repository: RecetaRepository): ViewModel() {

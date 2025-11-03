@@ -37,8 +37,8 @@ fun PantallaLogin(
     // ViewModel inyectado (puedes pasarlo desde MainActivity o usar viewModel())
     viewModel: LoginViewModel = viewModel()
 ) {
-    // Variables de email y password
-    var email by remember { mutableStateOf("") }
+    // Variables de nombre y password
+    var nombre by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
 
     // Observar el estado del login desde el ViewModel
@@ -153,18 +153,18 @@ fun PantallaLogin(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Campo para ingresar email
+            // Campo para ingresar nombre
             OutlinedTextField(
-                value = email,
+                value = nombre,
                 onValueChange = {
-                    email = it
+                    nombre = it
                     localErrorMessage = ""
                     // Resetear estado de error del ViewModel si existe
                     if (loginState is LoginState.Error) {
                         viewModel.resetState()
                     }
                 },
-                label = { Text("Email o Usuario") },
+                label = { Text("Nombre de Usuario") },
                 singleLine = true,
                 enabled = !isLoading, // Deshabilitar mientras carga
                 modifier = Modifier.fillMaxWidth(),
@@ -240,9 +240,9 @@ fun PantallaLogin(
             Button(
                 onClick = {
                     // Validación local de campos vacíos
-                    if (email.isNotEmpty() && pass.isNotEmpty()) {
+                    if (nombre.isNotEmpty() && pass.isNotEmpty()) {
                         // Llamar al ViewModel para hacer login
-                        viewModel.login(email, pass)
+                        viewModel.login(nombre, pass)
                     } else {
                         localErrorMessage = "Por favor completa todos los campos!"
                     }

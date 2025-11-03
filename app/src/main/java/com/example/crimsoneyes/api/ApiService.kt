@@ -17,4 +17,13 @@ interface ApiService {
 
     @GET("posts")
     suspend fun obtenerRecetas(): List<Receta>
+
+    // Usuario endpoints
+    @Headers("Content-Type: application/json")
+    @POST("usuario/login")
+    suspend fun login(@Body body: LoginRequest): Usuario
+
+    @Headers("Content-Type: application/json")
+    @POST("usuario/register")
+    suspend fun register(@Body body: Usuario): retrofit2.Response<Void>
 }

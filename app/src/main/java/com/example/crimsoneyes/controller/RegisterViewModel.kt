@@ -15,28 +15,32 @@ class RegisterViewModel(private val repository: UsuarioRepository): ViewModel() 
     private val _registerState = MutableStateFlow<RegisterState>(RegisterState.Idle)
     val registerState: StateFlow<RegisterState> = _registerState.asStateFlow()
 
-    fun register(username: String,  password: String) {
+    fun register(nombre: String, email: String,  password: String, rut: String) {
         viewModelScope.launch {
             try {
                 _registerState.value = RegisterState.Loading
+                // Registrar vía backend
+                val newUser = Usuario(
+                    nombre = nombre,
+                    email = email,
+                    password = password,
+                    rut = rut
 
-                //verificar si el usuario ya existe
-                val existingUser = repository.findByUsername(username)
-                if(existingUser != null) {
-                    _registerState.value = RegisterState.Error("El nombre de usuario ya existe")
+                )
+
+                val success = repository.register(newUser)
+                if (!success) {
+                    _registerState.value = RegisterState.Error("Error al registrar en el servidor")
                     return@launch
                 }
-                val newUser = Usuario(
-                    username = username,
-                    password = password
-                )
-                val userId = repository.insert(newUser)
 
+                // Insertar localmente para mantener BD coherente
+                val userId = repository.insert(newUser)
                 if(userId > 0) {
-                    Log.d("RegisterViewModel", "Usuario registrado exitosamente: $username")
+                    Log.d("RegisterViewModel", "Usuario registrado exitosamente: $nombre")
                     _registerState.value = RegisterState.Success(newUser.copy(id = userId))
                 } else {
-                    _registerState.value = RegisterState.Error("Error al crear el usuario")
+                    _registerState.value = RegisterState.Error("Registrado en servidor pero error al guardar localmente")
                 }
             }catch(ex: Exception) {
                 Log.e("RegisterViewModel", "Error en registro..", ex)

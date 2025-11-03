@@ -23,8 +23,8 @@ class LoginViewModel(private val repository: UsuarioRepository): ViewModel() {
     //estado público inmutable - la UI solo puede observarlo
     val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
 
-    fun login(username: String, password: String) {
-        if(username.isEmpty() || password.isEmpty()) {
+    fun login(nombre: String, password: String) {
+        if(nombre.isEmpty() || password.isEmpty()) {
             _loginState.value = LoginState.Error("Por favor completa todos los campos")
             return
         }
@@ -33,14 +33,11 @@ class LoginViewModel(private val repository: UsuarioRepository): ViewModel() {
             try {
                 _loginState.value = LoginState.Loading
 
-                val user = repository.findByUsername(username)
-
+                // Llamada al backend para validar credenciales
+                val user = repository.login(nombre, password)
                 when {
                     user == null -> {
-                        _loginState.value = LoginState.Error("Usuario no encontrado")
-                    }
-                    user.password != password -> {
-                        _loginState.value = LoginState.Error("Contraseña Incorrecta")
+                        _loginState.value = LoginState.Error("Usuario o contraseña incorrectos")
                     }
                     else -> {
                         _loginState.value = LoginState.Success(user)

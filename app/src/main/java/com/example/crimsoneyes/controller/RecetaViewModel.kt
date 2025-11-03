@@ -29,6 +29,9 @@ data class RecetaUiState(
     val list: List<Receta> = emptyList(),
     val isListLoading: Boolean = false,
     val listError: String? = null,
+    // Eliminación
+    val isDeleting: Boolean = false,
+    val deleteError: String? = null,
 
     val productos: List<Producto> = emptyList(),
     val isProductosLoading: Boolean = false,
@@ -123,6 +126,22 @@ class RecetaViewModel(private val repository: RecetaRepository): ViewModel() {
                     it.copy(
                         isCreating = false,
                         createError = ex.message ?: "Error al guardar la receta"
+                    )
+                }
+            }
+        }
+    }
+    fun eliminarReceta(receta: Receta) {
+        viewModelScope.launch {
+            _state.update { it.copy(isDeleting = true, deleteError = null) }
+            try {
+                repository.delete(receta)
+                _state.update { it.copy(isDeleting = false) }
+            } catch (ex: Exception) {
+                _state.update {
+                    it.copy(
+                        isDeleting = false,
+                        deleteError = ex.message ?: "Error al eliminar la receta"
                     )
                 }
             }

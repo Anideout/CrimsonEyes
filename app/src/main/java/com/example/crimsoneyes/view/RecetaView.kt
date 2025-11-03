@@ -1,7 +1,6 @@
 package com.example.crimsoneyes.view
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,19 +9,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.RecentActors
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.BeachAccess
+import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,7 +33,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.room.Delete
 import com.example.crimsoneyes.R
 import com.example.crimsoneyes.controller.RecetaViewModel
 import com.example.crimsoneyes.model.Receta
@@ -89,6 +87,19 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    FilledTonalIconButton(
+                        onClick = onNavigateToProductos,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ShoppingCart,
+                            contentDescription = "Ver Productos",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
                     FilledTonalIconButton(
                         onClick = onToggleTheme,
                         modifier = Modifier.size(40.dp)
@@ -164,11 +175,6 @@ fun HomeScreen(
                     StatsCard(recetasCount = state.list.size)
                 }
 
-                // A PRODUCTOS
-                item {
-                    ProductosNavigationCard(onNavigateToProductos = onNavigateToProductos)
-                }
-
                 // LOADING
                 if (state.isListLoading && state.list.isEmpty()) {
                     item {
@@ -208,7 +214,10 @@ fun HomeScreen(
                         items = state.list,
                         key = { it.id ?: 0 }
                     ) { receta ->
-                        RecetaCard(receta = receta)
+                        RecetaCard(
+                            receta = receta,
+                            onDeleteClick = { viewModel.eliminarReceta(receta) }
+                        )
                     }
                 }
 
@@ -216,76 +225,6 @@ fun HomeScreen(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProductosNavigationCard(onNavigateToProductos: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(56.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ShoppingCart,
-                        contentDescription = null,
-                        modifier = Modifier.padding(14.dp),
-                        tint = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-
-                Column {
-                    Text(
-                        "Catálogo de Lentes",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                    Text(
-                        "Explora nuestros productos",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
-                    )
-                }
-            }
-
-            FilledTonalButton(
-                onClick = onNavigateToProductos,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary
-                )
-            ) {
-                Text("Ver", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .graphicsLayer(rotationZ = 180f)
-                )
             }
         }
     }
@@ -321,7 +260,7 @@ private fun CreateRecetaCard(
                     color = MaterialTheme.colorScheme.primary
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = Icons.Default.RecentActors,
                         contentDescription = null,
                         modifier = Modifier.padding(12.dp),
                         tint = MaterialTheme.colorScheme.onPrimary
@@ -349,7 +288,7 @@ private fun CreateRecetaCard(
                 label = { Text("Título") },
                 placeholder = { Text("Ej: Lentes para lectura") },
                 leadingIcon = {
-                    Icon(Icons.Outlined.Warning, contentDescription = null)
+                    Icon(Icons.Outlined.BeachAccess, contentDescription = null)
                 },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -366,7 +305,7 @@ private fun CreateRecetaCard(
                 label = { Text("Descripción") },
                 placeholder = { Text("Describe los detalles...") },
                 leadingIcon = {
-                    Icon(Icons.Outlined.Face, contentDescription = null)
+                    Icon(Icons.Outlined.Book, contentDescription = null)
                 },
                 minLines = 3,
                 maxLines = 5,
@@ -497,7 +436,7 @@ private fun StatsCard(recetasCount: Int) {
                 color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Delete,
+                    imageVector = Icons.Outlined.Favorite,
                     contentDescription = null,
                     modifier = Modifier.padding(14.dp),
                     tint = MaterialTheme.colorScheme.secondary
@@ -508,7 +447,7 @@ private fun StatsCard(recetasCount: Int) {
 }
 
 @Composable
-private fun RecetaCard(receta: Receta) {
+private fun RecetaCard(receta: Receta, onDeleteClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -531,6 +470,7 @@ private fun RecetaCard(receta: Receta) {
                         overflow = TextOverflow.Ellipsis
                     )
 
+
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
@@ -542,17 +482,8 @@ private fun RecetaCard(receta: Receta) {
                     )
                 }
 
-                Surface(
-                    modifier = Modifier.size(36.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.CheckCircle,
-                        contentDescription = null,
-                        modifier = Modifier.padding(8.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                IconButton(onClick = onDeleteClick) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Eliminar")
                 }
             }
 

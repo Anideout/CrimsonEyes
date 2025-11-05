@@ -17,10 +17,12 @@ import androidx.compose.material.icons.filled.RecentActors
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.BeachAccess
+import androidx.compose.material.icons.outlined.Biotech
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,6 +46,7 @@ fun HomeScreen(
     isDarkMode: Boolean,
     onToggleTheme: () -> Unit,
     onNavigateToProductos: () -> Unit,
+    onNavigateToProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -87,6 +90,19 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    FilledTonalIconButton(
+                        onClick = onNavigateToProfile,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = "Mi Perfil",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
                     FilledTonalIconButton(
                         onClick = onNavigateToProductos,
                         modifier = Modifier.size(40.dp)
@@ -523,7 +539,7 @@ private fun EmptyStateCard() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Outlined.ShoppingCart,
+                imageVector = Icons.Outlined.Biotech,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)

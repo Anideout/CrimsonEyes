@@ -21,10 +21,10 @@ import com.example.crimsoneyes.view.HomeScreen
 import com.example.crimsoneyes.view.PantallaLogin
 import com.example.crimsoneyes.view.PantallaRegistro
 import com.example.crimsoneyes.view.ProductosScreen
+import com.example.crimsoneyes.view.ProfileScreen
 
 @Composable
 fun AppNavigation(
-
     isDarkMode: Boolean,
     onToggleTheme: () -> Unit
 ) {
@@ -99,14 +99,28 @@ fun AppNavigation(
                 },
                 onNavigateToProductos = {
                     navController.navigate(Screen.Producto.route)
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Screen.Profile.route)
                 }
             )
         }
+
+        // Pantalla de Productos
         composable(Screen.Producto.route) {
             val productoViewModel: ProductoViewModel = viewModel()
 
             ProductosScreen(
                 viewModel = productoViewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Pantalla de Perfil
+        composable(Screen.Profile.route) {
+            ProfileScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

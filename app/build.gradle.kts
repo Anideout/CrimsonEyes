@@ -121,4 +121,17 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation("androidx.camera:camera-core:1.3.4")
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+    // ML Kit Barcode Scanning (QR incluido)
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    // Accompanist Permissions
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    // Guava para MoreExecutors
+    implementation("com.google.guava:guava:32.1.3-android")
+    // ZXing para generar QR
+    implementation("com.google.zxing:core:3.5.1")
 }

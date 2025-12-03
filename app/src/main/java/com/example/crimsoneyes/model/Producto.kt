@@ -1,15 +1,30 @@
 package com.example.crimsoneyes.model
 
 import androidx.annotation.DrawableRes
-import androidx.room.Entity
+import com.google.gson.annotations.SerializedName
 
-@Entity(tableName = "productos")
 data class Producto(
+    @SerializedName("id")
     val id: Int,
+
+    @SerializedName("nombre")
     val nombre: String,
+
+    @SerializedName("precio")
     val precio: Int,
+
+    @SerializedName("descripcion")
     val descripcion: String,
-    @DrawableRes val imagenResId: Int,
+
+    //localmente
+    @DrawableRes
+    val imagenResId: Int = com.example.crimsoneyes.R.drawable.lente,
+
+    @SerializedName("stock")
     val stock: Int = 0,
-    val categoria: String = "Lentes"
+
+    @SerializedName("categoria")
+    val categoria: String = "Lentes",
+
+
 )

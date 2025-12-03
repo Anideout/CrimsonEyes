@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
@@ -19,10 +18,8 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.BeachAccess
 import androidx.compose.material.icons.outlined.Biotech
 import androidx.compose.material.icons.outlined.Book
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +43,7 @@ fun HomeScreen(
     onToggleTheme: () -> Unit,
     onNavigateToProductos: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToQRScanner: () -> Unit,
     onLogout: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -95,7 +92,7 @@ fun HomeScreen(
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Person,
+                            painter = painterResource(id = R.drawable.profile),
                             contentDescription = "Mi Perfil",
                             modifier = Modifier.size(20.dp)
                         )
@@ -110,6 +107,19 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Outlined.ShoppingCart,
                             contentDescription = "Ver Productos",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    FilledTonalIconButton(
+                        onClick = onNavigateToQRScanner,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.qr),
+                            contentDescription = "Escanear QR",
                             modifier = Modifier.size(20.dp)
                         )
                     }

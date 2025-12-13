@@ -11,15 +11,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.crimsoneyes.R
 import com.example.crimsoneyes.controller.LoginState
@@ -27,53 +27,40 @@ import com.example.crimsoneyes.controller.LoginViewModel
 
 @Composable
 fun PantallaLogin(
-    // Variables asignadas para confirmar que logeas correctamente
-    onLoginSuccess: () -> Unit,
-    // Darkmode
+    onLoginSuccess: (String) -> Unit,
     isDarkMode: Boolean,
     onNavigateToRegister: () -> Unit,
-    // Para cambiar el tema
     onToggleTheme: () -> Unit,
-    // ViewModel inyectado (puedes pasarlo desde MainActivity o usar viewModel())
     viewModel: LoginViewModel = viewModel()
 ) {
-    // Variables de nombre y password
     var nombre by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
 
-    // Observar el estado del login desde el ViewModel
     val loginState by viewModel.loginState.collectAsState()
 
-    // Variable para controlar el mensaje de error local (campos vacíos)
     var localErrorMessage by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false)}
 
     // Manejar el éxito del login
     LaunchedEffect(loginState) {
         when (loginState) {
             is LoginState.Success -> {
-                // Usuario autenticado correctamente, navegar
-                onLoginSuccess()
-                // Resetear el estado después de navegar
+                val usuario = (loginState as LoginState.Success).usuario
+                onLoginSuccess(usuario.email)
                 viewModel.resetState()
             }
-            else -> { }
+            else -> {}
         }
     }
 
-    // Determinar qué mensaje de error mostrar
     val errorMessage = when (loginState) {
         is LoginState.Error -> (loginState as LoginState.Error).message
         else -> localErrorMessage
     }
 
-    // Verificar si está cargando
     val isLoading = loginState is LoginState.Loading
 
-    // Para almacenar elementos
     Box(
-        // Indicamos que ocupe toda la pantalla
         modifier = Modifier
             .fillMaxSize()
             .background(
@@ -85,7 +72,6 @@ fun PantallaLogin(
                 )
             )
     ) {
-        // Botón para el dark mode
         IconButton(
             onClick = onToggleTheme,
             modifier = Modifier
@@ -108,7 +94,6 @@ fun PantallaLogin(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Card del logo
             Card(
                 modifier = Modifier
                     .size(140.dp)
@@ -153,20 +138,18 @@ fun PantallaLogin(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Campo para ingresar nombre
             OutlinedTextField(
                 value = nombre,
                 onValueChange = {
                     nombre = it
                     localErrorMessage = ""
-                    // Resetear estado de error del ViewModel si existe
                     if (loginState is LoginState.Error) {
                         viewModel.resetState()
                     }
                 },
                 label = { Text("Nombre de Usuario") },
                 singleLine = true,
-                enabled = !isLoading, // Deshabilitar mientras carga
+                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -177,7 +160,6 @@ fun PantallaLogin(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo para ingresar contraseña
             OutlinedTextField(
                 value = pass,
                 onValueChange = {
@@ -191,7 +173,8 @@ fun PantallaLogin(
                 singleLine = true,
                 enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = if(passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None
+                else PasswordVisualTransformation(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -199,18 +182,18 @@ fun PantallaLogin(
                 ),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (passwordVisible) R.drawable.hidden else R.drawable.eye
-                        ),
-                        contentDescription = if (passwordVisible) "Ocultar" else "Mostrar",
-                        modifier = Modifier.size(20.dp)
-                    )
-            }
-        },
+                        Icon(
+                            painter = painterResource(
+                                id = if (passwordVisible) R.drawable.hidden
+                                else R.drawable.eye
+                            ),
+                            contentDescription = if (passwordVisible) "Ocultar" else "Mostrar",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             )
 
-            // Mostrar mensaje de error con animación
             AnimatedVisibility(
                 visible = errorMessage.isNotEmpty(),
                 enter = slideInVertically() + fadeIn(),
@@ -236,27 +219,21 @@ fun PantallaLogin(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Botón de inicio de sesión
             Button(
                 onClick = {
-                    // Validación local de campos vacíos
                     if (nombre.isNotEmpty() && pass.isNotEmpty()) {
-                        // Llamar al ViewModel para hacer login
                         viewModel.login(nombre, pass)
                     } else {
                         localErrorMessage = "Por favor completa todos los campos!"
                     }
                 },
-
-
-                enabled = !isLoading, // Deshabilitar mientras carga
+                enabled = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
-                // Mostrar spinner o texto según el estado
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
@@ -271,6 +248,7 @@ fun PantallaLogin(
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             TextButton(onClick = onNavigateToRegister) {
@@ -280,7 +258,6 @@ fun PantallaLogin(
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-
         }
     }
 }

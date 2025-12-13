@@ -34,184 +34,175 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductosScreen(
-    viewModel: ProductoViewModel,
-    onNavigateBack: () -> Unit
+        viewModel: ProductoViewModel,
+        onNavigateBack: () -> Unit,
+        onNavigateToCarrito: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    val categorias = listOf("Todos", "Lectura", "Sol", "Deportivos", "Progresivos")
+    val categorias =
+            listOf(
+                    "Todos",
+                    "Lectura",
+                    "Redondos",
+                    "Aceleracionista",
+                    "Armani",
+                    "IDM",
+                    "Filtros azul"
+            )
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            "Catálogo de Lentes",
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "${state.list.size} productos disponibles",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
-                        )
-                    }
-                },
-                actions = {
-                    // Icono de carrito con badge
-                    BadgedBox(
-                        badge = {
-                            if (state.carritoCount > 0) {
-                                Badge {
-                                    Text("${state.carritoCount}")
+            topBar = {
+                TopAppBar(
+                        title = {
+                            Column {
+                                Text("Catálogo de Lentes", fontWeight = FontWeight.Bold)
+                                Text(
+                                        "${state.list.size} productos disponibles",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Volver"
+                                )
+                            }
+                        },
+                        actions = {
+                            BadgedBox(
+                                    badge = {
+                                        if (state.carritoCount > 0) {
+                                            Badge { Text("${state.carritoCount}") }
+                                        }
+                                    }
+                            ) {
+                                IconButton(onClick = onNavigateToCarrito) {
+                                    Icon(
+                                            imageVector = Icons.Outlined.ShoppingCart,
+                                            contentDescription = "Carrito"
+                                    )
                                 }
                             }
                         }
-                    ) {
-                        IconButton(onClick = { /* TODO: Navegar a carrito */ }) {
-                            Icon(
-                                imageVector = Icons.Outlined.ShoppingCart,
-                                contentDescription = "Carrito"
-                            )
-                        }
-                    }
-                }
-            )
-        },
-        snackbarHost = {
-            // Snackbar para mensajes de compra
-            state.mensajeCompra?.let { mensaje ->
-                Snackbar(
-                    modifier = Modifier.padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                ) {
-                    Text(mensaje)
+                )
+            },
+            snackbarHost = {
+                //  mensajes de compra
+                state.mensajeCompra?.let { mensaje ->
+                    Snackbar(
+                            modifier = Modifier.padding(16.dp),
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    ) { Text(mensaje) }
                 }
             }
-        }
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             // Fondo degradado sutil
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-                                Color.Transparent
-                            )
-                        )
-                    )
+                    modifier =
+                            Modifier.fillMaxWidth()
+                                    .height(250.dp)
+                                    .background(
+                                            Brush.verticalGradient(
+                                                    colors =
+                                                            listOf(
+                                                                    MaterialTheme.colorScheme
+                                                                            .secondaryContainer
+                                                                            .copy(alpha = 0.3f),
+                                                                    Color.Transparent
+                                                            )
+                                            )
+                                    )
             )
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Filtros por categoría
                 item {
                     CategoriaFilterChips(
-                        categorias = categorias,
-                        categoriaSeleccionada = state.categoriaSeleccionada,
-                        onCategoriaSelected = { viewModel.filtarPorCategoria(it) }
+                            categorias = categorias,
+                            categoriaSeleccionada = state.categoriaSeleccionada,
+                            onCategoriaSelected = { viewModel.filtarPorCategoria(it) }
                     )
                 }
 
-                // LOADING
                 if (state.isListLoading && state.list.isEmpty()) {
-                    item {
-                        LoadingProductosCard()
-                    }
+                    item { LoadingProductosCard() }
                 }
                 // ERROR
                 else if (state.listError != null) {
                     item {
                         ErrorProductosCard(
-                            mensaje = state.listError ?: "Error desconocido",
-                            onRetry = { viewModel.cargarProductos() }
+                                mensaje = state.listError ?: "Error desconocido",
+                                onRetry = { viewModel.cargarProductos() }
                         )
                     }
                 }
                 // LISTA VACÍA
                 else if (state.list.isEmpty()) {
-                    item {
-                        EmptyProductosCard()
-                    }
+                    item { EmptyProductosCard() }
                 }
                 // LISTA DE PRODUCTOS
                 else {
-                    items(
-                        items = state.list,
-                        key = { it.id }
-                    ) { producto ->
+                    items(items = state.list, key = { it.id }) { producto ->
                         ProductoCard(
-                            producto = producto,
-                            onProductoClick = { viewModel.seleccionarProducto(producto) },
-                            onAgregarCarrito = { viewModel.agregarAlCarrito(producto) }
+                                producto = producto,
+                                onProductoClick = { viewModel.seleccionarProducto(producto) },
+                                onAgregarCarrito = { viewModel.agregarAlCarrito(producto) }
                         )
                     }
                 }
 
                 // Padding final
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
+                item { Spacer(modifier = Modifier.height(16.dp)) }
             }
         }
     }
 
-    // Dialog para detalle del producto
     state.productoSeleccionado?.let { producto ->
         ProductoDetalleDialog(
-            producto = producto,
-            onDismiss = { viewModel.limpiarProductoSeleccionado() },
-            onComprar = {
-                viewModel.agregarAlCarrito(producto)
-                viewModel.limpiarProductoSeleccionado()
-            }
+                producto = producto,
+                onDismiss = { viewModel.limpiarProductoSeleccionado() },
+                onComprar = {
+                    viewModel.agregarAlCarrito(producto)
+                    viewModel.limpiarProductoSeleccionado()
+                }
         )
     }
 }
 
 @Composable
 private fun CategoriaFilterChips(
-    categorias: List<String>,
-    categoriaSeleccionada: String,
-    onCategoriaSelected: (String) -> Unit
+        categorias: List<String>,
+        categoriaSeleccionada: String,
+        onCategoriaSelected: (String) -> Unit
 ) {
     LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp)
     ) {
         items(categorias) { categoria ->
             FilterChip(
-                selected = categoria == categoriaSeleccionada,
-                onClick = { onCategoriaSelected(categoria) },
-                label = { Text(categoria) },
-                leadingIcon = if (categoria == categoriaSeleccionada) {
-                    {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                } else null
+                    selected = categoria == categoriaSeleccionada,
+                    onClick = { onCategoriaSelected(categoria) },
+                    label = { Text(categoria) },
+                    leadingIcon =
+                            if (categoria == categoriaSeleccionada) {
+                                {
+                                    Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            } else null
             )
         }
     }
@@ -219,105 +210,121 @@ private fun CategoriaFilterChips(
 
 @Composable
 private fun ProductoCard(
-    producto: Producto,
-    onProductoClick: () -> Unit,
-    onAgregarCarrito: () -> Unit
+        producto: Producto,
+        onProductoClick: () -> Unit,
+        onAgregarCarrito: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onProductoClick() },
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            modifier = Modifier.fillMaxWidth().clickable { onProductoClick() },
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Imagen del producto
-            Card(
-                modifier = Modifier.size(100.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
+            Card(modifier = Modifier.size(100.dp), shape = RoundedCornerShape(12.dp)) {
                 Image(
-                    painter = painterResource(id = producto.imagenResId),
-                    contentDescription = producto.nombre,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                        painter = painterResource(id = producto.imagenResId),
+                        contentDescription = producto.nombre,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                 )
             }
 
-            // Información del producto
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    // Categoría chip
                     AssistChip(
-                        onClick = { },
-                        label = {
-                            Text(
-                                producto.categoria,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        },
-                        modifier = Modifier.height(24.dp),
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
+                            onClick = {},
+                            label = {
+                                Text(
+                                        producto.categoria,
+                                        style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            modifier = Modifier.height(24.dp),
+                            colors =
+                                    AssistChipDefaults.assistChipColors(
+                                            containerColor =
+                                                    MaterialTheme.colorScheme.secondaryContainer
+                                    )
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     // Nombre
                     Text(
-                        text = producto.nombre,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                            text = producto.nombre,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     // Descripción
                     Text(
-                        text = producto.descripcion,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                            text = producto.descripcion,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                     )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Indicador de Stock
+                    Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                                imageVector = Icons.Default.Storage,
+                                contentDescription = "Stock",
+                                modifier = Modifier.size(14.dp),
+                                tint = if (producto.stock > 5) MaterialTheme.colorScheme.primary
+                                       else if (producto.stock > 0) MaterialTheme.colorScheme.tertiary
+                                       else MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                                text = if (producto.stock > 0) "${producto.stock} disponibles"
+                                       else "Sin stock",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (producto.stock > 5) MaterialTheme.colorScheme.primary
+                                        else if (producto.stock > 0) MaterialTheme.colorScheme.tertiary
+                                        else MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Precio
                     Text(
-                        text = formatoPrecio(producto.precio),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
+                            text = formatoPrecio(producto.precio),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary
                     )
 
                     // Botón agregar
                     FilledTonalIconButton(
-                        onClick = {
-                            onAgregarCarrito()
-                        },
-                        modifier = Modifier.size(40.dp)
+                            onClick = { onAgregarCarrito() },
+                            modifier = Modifier.size(40.dp),
+                            enabled = producto.stock > 0
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Agregar al carrito"
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Agregar al carrito"
                         )
                     }
                 }
@@ -328,148 +335,133 @@ private fun ProductoCard(
 
 @Composable
 private fun ProductoDetalleDialog(
-    producto: Producto,
-    onDismiss: () -> Unit,
-    onComprar: () -> Unit
+        producto: Producto,
+        onDismiss: () -> Unit,
+        onComprar: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(24.dp)
+                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 // Imagen grande
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
                     Image(
-                        painter = painterResource(id = producto.imagenResId),
-                        contentDescription = producto.nombre,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                            painter = painterResource(id = producto.imagenResId),
+                            contentDescription = producto.nombre,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
                     )
 
                     // Botón cerrar
                     IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                                CircleShape
-                            )
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
-                    }
+                            onClick = onDismiss,
+                            modifier =
+                                    Modifier.align(Alignment.TopEnd)
+                                            .padding(8.dp)
+                                            .background(
+                                                    MaterialTheme.colorScheme.surface.copy(
+                                                            alpha = 0.9f
+                                                    ),
+                                                    CircleShape
+                                            )
+                    ) { Icon(Icons.Default.Close, contentDescription = "Cerrar") }
 
                     // Badge de categoría
                     Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(16.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
+                            modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Text(
-                            text = producto.categoria,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
+                                text = producto.categoria,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
                 // Contenido
                 Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Nombre
                     Text(
-                        text = producto.nombre,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                            text = producto.nombre,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
                     )
 
                     // Descripción
                     Text(
-                        text = producto.descripcion,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = producto.descripcion,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Divider()
 
                     // Stock
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Outlined.CheckCircle,
-                            contentDescription = null,
-                            tint = if (producto.stock > 0)
-                                MaterialTheme.colorScheme.tertiary
-                            else
-                                MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(20.dp)
+                                Icons.Outlined.CheckCircle,
+                                contentDescription = null,
+                                tint =
+                                        if (producto.stock > 0) MaterialTheme.colorScheme.tertiary
+                                        else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = if (producto.stock > 0)
-                                "Stock disponible: ${producto.stock} unidades"
-                            else
-                                "Sin stock",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (producto.stock > 0)
-                                MaterialTheme.colorScheme.onSurface
-                            else
-                                MaterialTheme.colorScheme.error
+                                text =
+                                        if (producto.stock > 0)
+                                                "Stock disponible: ${producto.stock} unidades"
+                                        else "Sin stock",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color =
+                                        if (producto.stock > 0) MaterialTheme.colorScheme.onSurface
+                                        else MaterialTheme.colorScheme.error
                         )
                     }
 
                     // Precio y botón
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
                             Text(
-                                text = "Precio",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = "Precio",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = formatoPrecio(producto.precio),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.primary
+                                    text = formatoPrecio(producto.precio),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary
                             )
                         }
 
                         Button(
-                            onClick = onComprar,
-                            enabled = producto.stock > 0,
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                                onClick = onComprar,
+                                enabled = producto.stock > 0,
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                         ) {
                             Icon(
-                                Icons.Outlined.ShoppingCart,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                                    Icons.Outlined.ShoppingCart,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text(
-                                "Agregar",
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Text("Agregar", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -480,16 +472,11 @@ private fun ProductoDetalleDialog(
 
 @Composable
 private fun LoadingProductosCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
         ) {
             CircularProgressIndicator(modifier = Modifier.size(32.dp))
             Spacer(modifier = Modifier.width(16.dp))
@@ -501,50 +488,50 @@ private fun LoadingProductosCard() {
 @Composable
 private fun ErrorProductosCard(mensaje: String, onRetry: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        ),
-        shape = RoundedCornerShape(16.dp)
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                    CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+            shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.error
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.error
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Error al cargar productos",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                    text = "Error al cargar productos",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onErrorContainer
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = mensaje,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center
+                    text = mensaje,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
+                    onClick = onRetry,
+                    colors =
+                            ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error
+                            )
             ) {
                 Icon(Icons.Default.Refresh, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
@@ -557,39 +544,38 @@ private fun ErrorProductosCard(mensaje: String, onRetry: () -> Unit) {
 @Composable
 private fun EmptyProductosCard() {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        shape = RoundedCornerShape(16.dp)
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                    CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+            shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Outlined.Inventory,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    imageVector = Icons.Outlined.Inventory,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "No hay productos disponibles",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                    text = "No hay productos disponibles",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Pronto agregaremos nuevos productos",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Pronto agregaremos nuevos productos",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

@@ -5,6 +5,7 @@ import com.example.crimsoneyes.db.CrimsonDataBase
 import com.example.crimsoneyes.model.LoginRequest
 import com.example.crimsoneyes.model.Usuario
 import com.example.crimsoneyes.network.RetrofitProvider
+import retrofit2.Call
 
 class UsuarioRepository(private val db: CrimsonDataBase) {
 
@@ -26,22 +27,13 @@ class UsuarioRepository(private val db: CrimsonDataBase) {
         db.UsuarioDao().update(u)
     }
 
-    //  backend
-    suspend fun login(email: String, password: String): Usuario? {
-        return try {
-            api.login(LoginRequest(email = email, password = password))
-        } catch (ex: Exception) {
-            null
-        }
+    // Backend methods
+    fun login(email: String, password: String): Call<Usuario> {
+        return api.login(LoginRequest(email = email, password = password))
     }
 
-    suspend fun register(u: Usuario): Boolean {
-        return try {
-            val resp = api.register(u)
-            resp.isSuccessful
-        } catch (ex: Exception) {
-            false
-        }
+    fun register(u: Usuario): Call<Map<String, Any>> {
+        return api.register(u)
     }
 
 

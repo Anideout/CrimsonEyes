@@ -22,7 +22,8 @@ object RetrofitProvider {
 
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()
-
+                //estoy ocupando mi ip de wi-fi ya que ocupé emulador por wi-fi
+            //para probar en emulador nativo de android studio seria 10.0.2.2:8080/
                 .baseUrl("http://192.168.1.94:8080/")
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
